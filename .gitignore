@@ -1,0 +1,27 @@
+# IntelliJ
+.idea/
+*.iml
+
+# Maven
+target/
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# Gradle
+.gradle/
+build/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment / secrets
+.env
+*.env
+
+# Local configuration
+application-local.yml
+application-local.properties
