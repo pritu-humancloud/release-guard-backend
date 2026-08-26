@@ -4,24 +4,20 @@
 
 # Maven
 target/
-!**/src/main/**/target/
-!**/src/test/**/target/
+**/target/
 
-# Gradle
-.gradle/
-build/
+# Java
+*.class
 
 # Logs
 *.log
 
+# Environment / secrets
+.env
+.env.*
+application-local.yml
+application-local.properties
+
 # OS
 .DS_Store
 Thumbs.db
-
-# Environment / secrets
-.env
-*.env
-
-# Local configuration
-application-local.yml
-application-local.properties
