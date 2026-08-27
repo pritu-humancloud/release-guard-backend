@@ -80,14 +80,12 @@ public class ReleaseService {
 		}
 
 		Release saved = releaseRepository.save(release);
-		eventPublisher.publishStatusChanged(new ReleaseStatusChangedEvent(
-				"release.status.changed",
+		eventPublisher.publishStatusChanged(ReleaseStatusChangedEvent.of(
 				saved.getId(),
 				saved.getProjectName(),
 				saved.getVersion(),
 				previous,
-				next,
-				Instant.now()
+				next
 		));
 		return ReleaseResponse.from(saved);
 	}
