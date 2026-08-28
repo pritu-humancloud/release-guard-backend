@@ -4,6 +4,84 @@ ReleaseGuard is an automated release governance and risk evaluation platform bui
 
 ---
 
+## ⚡ Kafka Consumer Lag & Automated Flow Testing (Single Endpoints)
+
+You can test the entire Kafka event-driven flow and measure real-time consumer lag using **a single API call**. When the test endpoint is hit, it immediately publishes test events to Kafka (`risk.calculated`, `release.status.changed`, `health.incident.created`, `release.created`), and consumers (such as `notification-service` and `risk-service`) **automatically pick up and consume the events in the background without needing any API hit**.
+
+### 1. Test Endpoint (Publish & Measure Lag)
+
+- **Method**: `POST`
+- **URL (via Gateway)**: `http://localhost:8080/api/releases/test/consumer-lag`
+- **URL (Direct Release Service)**: `http://localhost:8082/api/releases/test/consumer-lag`
+- **URL (Direct Notification Service)**: `http://localhost:8085/api/notifications/test/consumer-lag`
+
+#### Query / Body Parameters (All Optional):
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `count` | `int` | `10` | Number of test events to publish in burst |
+| `eventType` | `string` | `ALL` | Options: `RISK_HIGH`, `RELEASE_BLOCKED`, `INCIDENT`, `RELEASE_CREATED`, `ALL` |
+| `delayMs` | `long` | `0` | Delay between published events (0 for instantaneous burst) |
+| `projectName` | `string` | `payment-gateway` | Project name for event payloads |
+
+#### Example cURL:
+```bash
+# 1. Publish 10 test events in burst and test consumer lag
+curl -X POST "http://localhost:8080/api/releases/test/consumer-lag?count=10&eventType=ALL"
+
+# 2. Publish 5 High-Risk events to trigger automated RISK_HIGH notifications
+curl -X POST "http://localhost:8080/api/releases/test/consumer-lag?count=5&eventType=RISK_HIGH"
+
+# 3. Publish with JSON body
+curl -X POST "http://localhost:8080/api/releases/test/consumer-lag" \
+  -H "Content-Type: application/json" \
+  -d '{"count": 20, "eventType": "ALL", "delayMs": 10, "projectName": "auth-service"}'
+```
+
+#### Sample Response:
+```json
+{
+  "status": "SUCCESS",
+  "message": "Successfully published 10 event(s) to Kafka. Consumer 'notification-service' is automatically consuming events in the background without any API invocation.",
+  "eventsPublished": 10,
+  "eventType": "ALL",
+  "targetTopics": [
+    "risk.calculated",
+    "release.status.changed",
+    "health.incident.created",
+    "release.created"
+  ],
+  "targetConsumerGroup": "notification-service",
+  "totalLag": 0,
+  "partitionDetails": [
+    {
+      "topic": "risk.calculated",
+      "partition": 0,
+      "logEndOffset": 24,
+      "currentOffset": 24,
+      "lag": 0
+    }
+  ],
+  "verificationEndpoints": {
+    "1_ListNotifications": "GET http://localhost:8080/api/notifications",
+    "2_RealtimeSseStream": "GET http://localhost:8080/api/notifications/stream",
+    "3_WebSocketStomp": "ws://localhost:8080/ws/notifications (Topic: /topic/notifications)",
+    "4_CurrentLagStatus": "GET http://localhost:8080/api/releases/test/consumer-lag"
+  }
+}
+```
+
+### 2. Metrics Endpoint (Read Real-time Consumer Lag)
+
+- **Method**: `GET`
+- **URL (via Gateway)**: `http://localhost:8080/api/releases/test/consumer-lag` or `http://localhost:8080/api/notifications/consumer-lag`
+- **URL (Direct Service)**: `http://localhost:8082/api/releases/test/consumer-lag` or `http://localhost:8085/api/notifications/consumer-lag`
+
+```bash
+curl -X GET "http://localhost:8080/api/releases/test/consumer-lag"
+```
+
+---
+
 ## 🏗️ Microservices Architecture
 
 ```
@@ -65,9 +143,9 @@ Spring Cloud API Gateway aggregates all OpenAPI specs into a single dashboard:
 
 | Route Pattern | Target Service | Description |
 |---|---|---|
-| `/api/releases/**` | `http://localhost:8082` | Release management & GitHub sync |
+| `/api/releases/**` | `http://localhost:8082` | Release management, GitHub sync & Kafka lag test |
 | `/api/risk/**` | `http://localhost:8083` | Risk calculations & rule management |
-| `/api/notifications/**` | `http://localhost:8085` | Notification listings & SSE streaming |
+| `/api/notifications/**` | `http://localhost:8085` | Notification listings, SSE streaming & Kafka lag test |
 | `/ws/notifications/**` | `ws://localhost:8085` | STOMP over WebSocket push |
 
 ---
@@ -92,6 +170,8 @@ Spring Cloud API Gateway aggregates all OpenAPI specs into a single dashboard:
 | `PUT` | `/api/notifications/{id}/status` | Update notification status |
 | `GET` | `/api/notifications/stream` | Real-time push via Server-Sent Events (SSE) |
 | `WS` | `/ws/notifications` | Real-time push via STOMP WebSocket (Topic: `/topic/notifications`) |
+| `POST` | `/api/notifications/test/consumer-lag` | Test Kafka consumer lag & automated background consumption |
+| `GET` | `/api/notifications/consumer-lag` | Real-time consumer lag metrics |
 
 ---
 
