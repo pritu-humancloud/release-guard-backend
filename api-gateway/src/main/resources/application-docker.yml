@@ -2,8 +2,6 @@ server:
   port: 8080
 
 spring:
-  application:
-    name: api-gateway
   cloud:
     gateway:
       globalcors:
@@ -20,73 +18,57 @@ spring:
       routes:
         # --- Release Service Routes ---
         - id: release-service-docs
-          uri: http://localhost:8082
+          uri: http://release-service:8082
           predicates:
             - Path=/v3/api-docs/release-service
           filters:
             - SetPath=/v3/api-docs
 
         - id: release-service-api
-          uri: http://localhost:8082
+          uri: http://release-service:8082
           predicates:
             - Path=/api/releases/**
 
         # --- Risk Service Routes ---
         - id: risk-service-docs
-          uri: http://localhost:8083
+          uri: http://risk-service:8083
           predicates:
             - Path=/v3/api-docs/risk-service
           filters:
             - SetPath=/v3/api-docs
 
         - id: risk-service-api
-          uri: http://localhost:8083
+          uri: http://risk-service:8083
           predicates:
             - Path=/api/risk/**
 
         # --- Notification Service Routes ---
         - id: notification-service-docs
-          uri: http://localhost:8085
+          uri: http://notification-service:8085
           predicates:
             - Path=/v3/api-docs/notification-service
           filters:
             - SetPath=/v3/api-docs
 
         - id: notification-service-api
-          uri: http://localhost:8085
+          uri: http://notification-service:8085
           predicates:
             - Path=/api/notifications/**
 
         - id: notification-service-ws
-          uri: ws://localhost:8085
+          uri: ws://notification-service:8085
           predicates:
             - Path=/ws/notifications/**
             
         # --- User Service Routes ---
         - id: user-service-docs
-          uri: http://localhost:8086
+          uri: http://user-service:8086
           predicates:
             - Path=/v3/api-docs/user-service
           filters:
             - SetPath=/v3/api-docs
 
         - id: user-service-api
-          uri: http://localhost:8086
+          uri: http://user-service:8086
           predicates:
             - Path=/api/users/**
-
-springdoc:
-  api-docs:
-    enabled: true
-  swagger-ui:
-    enabled: true
-    path: /swagger-ui.html
-    urls:
-      - name: Release Service
-        url: /v3/api-docs/release-service
-      - name: Risk Service
-        url: /v3/api-docs/risk-service
-      - name: Notification Service
-        url: /v3/api-docs/notification-service
-      - name: User Service
-        url: /v3/api-docs/user-service
